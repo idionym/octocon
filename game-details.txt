@@ -1,0 +1,16 @@
+1. Kangaroos - Brown - macropodine
+1. +2 technology, +1 language, -1 breeding, -2 unity
+2. Bees - Yellow - apiarian
+1. +2 shelter, +1 unity, -1 agriculture, -2 technology
+3. Rabbits - Gray - leporine
+1. +2 breeding, +1 agriculture, -1 fortitude, -2 hunting
+4. Pigs - Pink - porcine
+1. +2 agriculture, +1 fortitude, -1 hunting, -2 shelter
+5. Alligators - Green - eusuchian
+1. +2 fortitude, +1 breeding, -1 unity, -2 language
+6. Dogs - White - canine
+1. +2 unity, +1 hunting, -1 shelter, -2 agriculture
+7. Cats - Orange - feline
+1. +2 hunting, +1 technology,  -1 language, -2 fortitude
+8. Ducks - Red - anatine
+1. +2 language, +1 shelter, -1 technology, -2 breeding
