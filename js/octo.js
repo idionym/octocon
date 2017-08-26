@@ -14,6 +14,8 @@ var playerTurn = 0;
 var maxPlayers = 8; // maximum players
 var maxRange = 150; // maximum travel range from an island
 var islandSelected = [false];
+var improveSelected = false;
+var travelSelected = false;
 // Animal attributes: Name, Technology, Language, Breeding, Unity, Shelter, Agriculture, Fortitude, Hunting
 var animalTraits = [[],
 ["Macropodine", 2,	1,	-1,	-2,	0,	0,	0,	0],
@@ -28,8 +30,10 @@ var animalTraits = [[],
 
 // Click menu global variables
 var clickMenu = {};
+var destinationIsland = [];
 var isMenuOpen = false;
 var	mw,	mh,	mtlx, mtly;
+var technologyY, languageY, breedingY, unityY, shelterY, agricultureY, fortitudeY, huntingY;
 
 // Background image
 var bgReady = false;
@@ -131,15 +135,17 @@ function island (ID, width, height, pop, res) {
 // Create player properties and methods
 function player (ID) {
 	this.ID = ID;
+	this.improveLVL = 0;
 	this.update = function (round) {
-		this.islands = 0;
+		this.islands = [];
 		this.population = 0;
 		this.resources = 0;
 		this.AP = 0;
+		// this.isSelected = false;
 		if (round === 0) {
 			for (var i = 0; i < islandArray.length; i++) {
 				if (this.ID === islandArray[i].control) {
-					this.islands++;
+					this.islands.push(islandArray[i]);
 					this.population += islandArray[i].population;
 					this.resources += islandArray[i].resources;
 					this.AP += islandArray[i].AP;
@@ -149,7 +155,7 @@ function player (ID) {
 			console.log("Round " + round);
 			for (var i = 0; i < islandArray.length; i++) {
 				if (this.ID === islandArray[i].control) {
-					this.islands++;
+					this.islands.push(islandArray[i]);
 					islandArray[i].population = Math.floor((1 + (this.breeding * 0.1))*islandArray[i].population);
 					this.population += islandArray[i].population;
 					this.resources += islandArray[i].resources;
@@ -186,18 +192,113 @@ window.addEventListener('load', function() {
 	canvas.addEventListener("click", function (e) {
 		//console.log(e);
 		if(isMenuOpen) {
-			if(e.offsetX <= mtlx + mw && e.offsetX >= mtlx && e.offsetY <= mtly + mh && e.offsetY >= mtly) {
-				update(e.offsetX, e.offsetY); // redraw map and islands
-				menuSelect(e.offsetY);
-				openMenu(true, 0, 0, islandSelected[1]); // redraw menu at same location of the previously opened menu with 'true' option
-			} else {
-				console.log("Did not click within the menu boundaries.");
-				isMenuOpen = false;
-				if (islandSelected.length > 1) {
-					// remove the last selected island
-					islandSelected.pop();
+			if (improveSelected) {
+				console.log("Improve is selected.");
+				improveSelected = false;
+				// Check to see if click is within player-stat bounds
+				if(e.offsetX <= mtlx + mw && e.offsetX >= mtlx && e.offsetY <= mtly + mh && e.offsetY >= mtly) {
+
+					if (e.offsetY >= technologyY && e.offsetY < languageY) {
+						console.log("Technology was clicked");
+						playerArray[playerTurn].update(0);
+						playerArray[playerTurn].improveLVL++;
+						console.log("playerArray[playerTurn].improveLVL = " + playerArray[playerTurn].improveLVL);
+						playerArray[playerTurn].islands.forEach(function(item){
+							// console.log("Island" + item.ID + " had " + item.resources + " resources.");
+							item.resources -= Math.floor(playerArray[playerTurn].improveLVL * 100 * (item.resources/playerArray[playerTurn].resources));
+							// console.log("Island" + item.ID + " now has " + item.resources + " resources.");
+						});
+						// for (var i = 0; i < playerArray[playerTurn].islands.length; i++) {
+						// 	playerArray[playerTurn].islands[i].resources -= playerArray[playerTurn].improveLVL * 100 * Math.floor(playerArray[playerTurn].islands[i].resources/playerArray[playerTurn].resources);
+						// }
+						// playerArray[playerTurn].resources -= playerArray[playerTurn].improveLVL * 100;
+						playerArray[playerTurn].technology++;
+						playerArray[playerTurn].update(0);
+						update(islandSelected[1].x, islandSelected[1].y); // redraw map and islands
+						openMenu(true, 0, 0, islandSelected[1]); // redraw menu at same location of the previously opened menu with 'true' option
+						// console.log(playerArray[playerTurn].islands);
+					}
+					if (e.offsetY >= languageY && e.offsetY < breedingY) {
+						console.log("languageY was clicked");
+						playerArray[playerTurn].language++;
+					}
+					if (e.offsetY >= breedingY && e.offsetY < unityY) {
+						console.log("breedingY was clicked");
+						playerArray[playerTurn].breeding++;
+					}
+					if (e.offsetY >= unityY && e.offsetY < shelterY) {
+						console.log("unityY was clicked");
+						playerArray[playerTurn].unity++;
+					}
+					if (e.offsetY >= shelterY && e.offsetY < agricultureY) {
+						console.log("shelterY was clicked");
+						playerArray[playerTurn].shelter++;
+					}
+					if (e.offsetY >= agricultureY && e.offsetY < fortitudeY) {
+						console.log("agricultureY was clicked");
+						playerArray[playerTurn].agriculture++;
+					}
+					if (e.offsetY >= fortitudeY && e.offsetY < huntingY) {
+						console.log("fortitudeY was clicked");
+						playerArray[playerTurn].fortitude++;
+					}
+					if (e.offsetY >= huntingY && e.offsetY < huntingY+20) {
+						console.log("huntingY was clicked");
+						playerArray[playerTurn].hunting++;
+					}
+
+				// Refresh screen with IMPROVE selection
+				update(islandSelected[1].x, islandSelected[1].y); // redraw map and islands
+				openMenu(true, 0, 0, islandSelected[1]); // redraw menu at same location of the previously opened menu with 'true' option				
 				}
-				update(e.offsetX, e.offsetY); // redraw map and islands without menu (if no new island is clicked)
+			} else if (travelSelected) {
+				travelSelected = false;
+				console.log("Selected Island" + islandSelected[1].ID + " x=" + islandSelected[1].x + " y=" + islandSelected[1].y);
+				destinationIsland.forEach( function (item) {
+					// console.log("Island" + item.ID + " x=" + item.x + " y=" + item.y);
+					var distC = distClick(e.offsetX, e.offsetY, item.x, item.y);
+					// console.log(distC);
+					if (item.ID != 0) {
+						if (distC < 15) {
+							// console.log("Travel to " + item.ID + " completed with a click distance of " + distC);
+							item.control = islandSelected[1].control;							
+							islandSelected.pop();
+							islandSelected.push(item);
+							isMenuOpen = false;
+							// update(e.offsetX, e.offsetY); // redraw map and islands
+							// menuSelect(e.offsetY);
+							playerArray[playerTurn].update(0);
+							update(item.x, item.y); // redraw map and islands
+							openMenu(true, 0, 0, islandSelected[1]); // redraw menu at same location of the previously opened menu with 'true' option
+						}
+					} else {
+						if (distC < 85) {
+							// console.log("Travel to " + item.ID + " completed with a click distance of " + distC);
+							item.control = islandSelected[1].control;
+							islandSelected.pop();
+							islandSelected.push(item);
+							isMenuOpen = false;
+							playerArray[playerTurn].update(0);
+							update(item.x, item.y); // redraw map and islands
+							openMenu(true, 0, 0, islandSelected[1]); // redraw menu at same location of the previously opened menu with 'true' option
+						}
+					}
+				});
+			} else {
+				// Check to see if click is within menu bounds
+				if(e.offsetX <= mtlx + mw && e.offsetX >= mtlx && e.offsetY <= mtly + mh && e.offsetY >= mtly) {
+					update(e.offsetX, e.offsetY); // redraw map and islands
+					menuSelect(e.offsetY);
+					openMenu(true, 0, 0, islandSelected[1]); // redraw menu at same location of the previously opened menu with 'true' option
+				} else {
+					console.log("Did not click within the menu boundaries.");
+					isMenuOpen = false;
+					if (islandSelected.length > 1) {
+						// remove the last selected island
+						islandSelected.pop();
+					}
+					update(e.offsetX, e.offsetY); // redraw map and islands without menu (if no new island is clicked)
+				}
 			}
 		} else {
 			console.log("isMenuOpen is false");
@@ -215,6 +316,9 @@ window.addEventListener('load', function() {
 
 	this.addEventListener("mouseover", function (e) {
 		// console.log("In window.");
+		if (isMenuOpen && e.offsetX <= mtlx + mw && e.offsetX >= mtlx && e.offsetY <= mtly + mh && e.offsetY >= mtly) {
+			console.log("In menu boundaries.");
+		}
 	});
 
 	this.addEventListener("mouseout", function (e) {
@@ -329,6 +433,7 @@ var update = function (clickX, clickY) {
 	if(!isMenuOpen) {
 
 		islandSelected[0] = false;
+		destinationIsland = [];
 
 		// Check if BIG island is clicked
 		if (distClick(islandArray[0].x, islandArray[0].y, clickX, clickY) < 75) {
@@ -336,12 +441,14 @@ var update = function (clickX, clickY) {
 			// find all islands within travel range of the selected island
 			for(var j = 1; j < islandArray.length; j++) {
 				if (distClick(islandArray[0].x, islandArray[0].y, islandArray[j].x, islandArray[j].y) < maxRange+50) {
-					// Draw circle around islands in travel range
-					ctx.beginPath();
-					ctx.arc(islandArray[j].x, islandArray[j].y, 15, 0, 2 * Math.PI);
-					ctx.lineWidth=5;
-					ctx.strokeStyle="limegreen";
-					ctx.stroke();
+					// // Draw circle around islands in travel range
+					// ctx.beginPath();
+					// ctx.arc(islandArray[j].x, islandArray[j].y, 15, 0, 2 * Math.PI);
+					// ctx.lineWidth=5;
+					// ctx.strokeStyle="limegreen";
+					// ctx.stroke();
+
+					destinationIsland.push(islandArray[j]);
 				}
 			}
 
@@ -389,29 +496,35 @@ var update = function (clickX, clickY) {
 
 				// Check if BIG island is in range
 				if (distClick(islandArray[i].x, islandArray[i].y, islandArray[0].x, islandArray[0].y) < maxRange+50) {
-					ctx.lineWidth=5;
-					ctx.strokeStyle="limegreen";
-					drawEllipse(ctx, islandArray[0].x-95, islandArray[0].y-55, 180, 110);
+					// ctx.lineWidth=5;
+					// ctx.strokeStyle="limegreen";
+					// drawEllipse(ctx, islandArray[0].x-95, islandArray[0].y-55, 180, 110);
+
+					destinationIsland.push(islandArray[0]);
 				}
 
 				// find all islands within travel range of the selected island
 				for(var j = 1; j < islandArray.length; j++) {
 					if (distClick(islandArray[i].x, islandArray[i].y, islandArray[j].x, islandArray[j].y) < maxRange) {
 						// Draw circle around islands in travel range
-						ctx.beginPath();
-						ctx.arc(islandArray[j].x, islandArray[j].y, 15, 0, 2 * Math.PI);
-						ctx.lineWidth=5;
-						ctx.strokeStyle="limegreen";
-						ctx.stroke();
+						// ctx.beginPath();
+						// ctx.arc(islandArray[j].x, islandArray[j].y, 15, 0, 2 * Math.PI);
+						// ctx.lineWidth=5;
+						// ctx.strokeStyle="limegreen";
+						// ctx.stroke();
+
+						if (i != j) {
+							destinationIsland.push(islandArray[j]);
+						}
 					}
 				}
 
 				// Draw circle around selected island
-				ctx.beginPath();
-				ctx.arc(islandArray[i].x, islandArray[i].y, 15, 0, 2 * Math.PI);
-				ctx.lineWidth=5;
-				ctx.strokeStyle="red";
-				ctx.stroke();
+				// ctx.beginPath();
+				// ctx.arc(islandArray[i].x, islandArray[i].y, 15, 0, 2 * Math.PI);
+				// ctx.lineWidth=5;
+				// ctx.strokeStyle="red";
+				// ctx.stroke();
 
 				// break; // found the selected island, no need to continue this this loop
 			}
@@ -429,7 +542,9 @@ var update = function (clickX, clickY) {
 			// remove the last selected island if there is one to be removed
 			islandSelected.pop();
 		}*/
-	}		
+	}
+
+	document.getElementById("player-info").innerHTML = "Player " + playerArray[playerTurn].ID + " controls " + playerArray[playerTurn].islands.length + " with a total population of " + playerArray[playerTurn].population + " and a stash of " + playerArray[playerTurn].resources + " resources. There are " + playerArray[playerTurn].AP + " action point(s) left this turn.";		
 };
 
 function distBetween (a, b) {
@@ -468,6 +583,19 @@ function openMenu (wasOpen, clix, cliy, obj) {
 		}
 	}
 
+	// Draw circle around selected island
+	if (obj.ID === 0) {
+		ctx.lineWidth=5;
+		ctx.strokeStyle="red";
+		drawEllipse(ctx, obj.x-95, obj.y-55, 180, 110);
+	} else {
+		ctx.beginPath();
+		ctx.arc(obj.x, obj.y, 15, 0, 2 * Math.PI);
+		ctx.lineWidth=5;
+		ctx.strokeStyle="red";
+		ctx.stroke();
+	}
+
 	// Draw menu box
 	ctx.strokeStyle="rgba(0,0,0,0.85)";
 	ctx.strokeRect(mtlx-2, mtly-2, mw+2, mh+2);
@@ -489,17 +617,34 @@ function openMenu (wasOpen, clix, cliy, obj) {
 	ctx.font = "12px Helvetica";
 	if (obj.control != 0) {
 		ctx.fillText("Owner: Player " + obj.control, mtlx+10, mtly + sT); sT+=tT;
+		ctx.fillText("Name: " + playerArray[obj.control].name, mtlx+10, mtly + sT); sT+=tT;
+		technologyY = mtly + sT; sT+=tT;
+		languageY = mtly + sT; sT+=tT;
+		breedingY = mtly + sT; sT+=tT;
+		unityY = mtly + sT; sT+=tT;
+		shelterY = mtly + sT; sT+=tT;
+		agricultureY = mtly + sT; sT+=tT;
+		fortitudeY = mtly + sT; sT+=tT;
+		huntingY = mtly + sT; sT+=tT;
+		ctx.fillText("Technology: " + playerArray[obj.control].technology, mtlx+30, technologyY);
+		ctx.fillText("Language: " + playerArray[obj.control].language, mtlx+30, languageY);
+		ctx.fillText("Breeding: " + playerArray[obj.control].breeding, mtlx+30, breedingY);
+		ctx.fillText("Unity: " + playerArray[obj.control].unity, mtlx+30, unityY);
+		ctx.fillText("Shelter: " + playerArray[obj.control].shelter, mtlx+30, shelterY);
+		ctx.fillText("Agriculture: " + playerArray[obj.control].agriculture, mtlx+30, agricultureY);
+		ctx.fillText("Fortitude: " + playerArray[obj.control].fortitude, mtlx+30, fortitudeY);
+		ctx.fillText("Hunting: " + playerArray[obj.control].hunting, mtlx+30, huntingY);
 	} else {
 		ctx.fillText("Owner: Neutral", mtlx+10, mtly + sT); sT+=tT;
 	}
 	ctx.fillText("Population: " + obj.population, mtlx+10, mtly + sT); sT+=tT;
-	ctx.fillText("Resources: " + obj.resources, mtlx+10, mtly + sT); sT+=tT+20;
+	ctx.fillText("Resources: " + obj.resources, mtlx+10, mtly + sT); sT+=tT+15;
 
 	ctx.fillStyle = "rgb(0, 0, 250)";
 	if (obj.control == playerTurn) {
-		ctx.fillText("Player Turn: True", mtlx+10, mtly + sT); sT+=tT+20;
+		ctx.fillText("Player Turn: True", mtlx+10, mtly + sT); sT+=tT+15;
 	} else {
-		ctx.fillText("Player Turn: False", mtlx+10, mtly + sT); sT+=tT+20;
+		ctx.fillText("Player Turn: False", mtlx+10, mtly + sT); sT+=tT+15;
 	}
 
 	// ACTIONS
@@ -524,8 +669,10 @@ function openMenu (wasOpen, clix, cliy, obj) {
 }
 
 function menuSelect (clickY) {
+
 	if(clickY <= clickMenu.improveY + clickMenu.fontHeight && clickY >= clickMenu.improveY) {
 		console.log("IMPROVE");
+		improveSelected = true;
 /*			ctx.lineWidth=1;
 		ctx.fillStyle = "rgb(250, 250, 0)";
 		ctx.moveTo(mtlx, clickMenu.improveY);
@@ -541,6 +688,8 @@ function menuSelect (clickY) {
 		for (var i = 0; i < islandArray.length; i++) {
 			if (playerTurn === islandArray[i].control) {
 				// console.log(islandArray[i].ID + " under control of : " + islandArray[i].control);
+				// must modify this calculation to include the possibility of other species being present on the island
+				// 8/23/2017 calc update follows: you get 100 every round per island, + (breeding x10%), ÷ number of species present
 				islandArray[i].population = Math.floor((1 + (playerArray[playerTurn].breeding * 0.1))*islandArray[i].population);
 				playerArray[playerTurn].population += islandArray[i].population;
 				// visually update the menu by redrawing
@@ -561,6 +710,26 @@ function menuSelect (clickY) {
 		console.log("Resources: " + playerArray[playerTurn].resources);
 	} else if(clickY <= clickMenu.travelY + clickMenu.fontHeight && clickY >= clickMenu.travelY) {
 		console.log("TRAVEL");
+		// Draw green circles around islands within traveling range
+		destinationIsland.forEach( function (item) {
+			// console.log(item);
+			if (item.ID === 0) {
+				ctx.lineWidth=5;
+				ctx.strokeStyle="limegreen";
+				drawEllipse(ctx, item.x-95, item.y-55, 180, 110);
+			} else {
+				ctx.beginPath();
+				// ctx.arc(islandArray[item].x, islandArray[item].y, 15, 0, 2 * Math.PI);
+				ctx.arc(item.x, item.y, 15, 0, 2 * Math.PI);
+				ctx.lineWidth=5;
+				ctx.strokeStyle="limegreen";
+				ctx.stroke();
+			}
+		});
+
+		// Enable travel control
+		travelSelected = true;
+
 	} else if(clickY <= clickMenu.interactY + clickMenu.fontHeight && clickY >= clickMenu.interactY) {
 		console.log("INTERACT");
 	}
@@ -596,6 +765,7 @@ function drawEllipse(ctx, x, y, w, h) {
 
 function drawFlag (obj) {
 	// console.log(playerFlag[1]);
+	// console.log(obj.control);
 	ctx.drawImage(playerFlag[obj.control], obj.x, obj.y-40, 25, 40);
 }
 
@@ -608,7 +778,7 @@ function newTurn () {
 	}
 
 	playerArray[playerTurn].update(round);
-	document.getElementById("player-info").innerHTML = "Player " + playerArray[playerTurn].ID + " controls " + playerArray[playerTurn].islands + " with a total population of " + playerArray[playerTurn].population + " and a stash of " + playerArray[playerTurn].resources + ". There are " + playerArray[playerTurn].AP + " action point(s) left this turn.";
+	document.getElementById("player-info").innerHTML = "Player " + playerArray[playerTurn].ID + " controls " + playerArray[playerTurn].islands.length + " with a total population of " + playerArray[playerTurn].population + " and a stash of " + playerArray[playerTurn].resources + " resources. There are " + playerArray[playerTurn].AP + " action point(s) left this turn.";
 }
 
 
